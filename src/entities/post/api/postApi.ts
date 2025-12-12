@@ -20,14 +20,16 @@ export const postApi = {
     }
   },
 
-  searchPosts: async (query: string) => {
-    const response = await apiClient.get<PostsResponse>(`/posts/search`, { params: { q: query } })
+  searchPosts: async (query: string, params: { limit: number; skip: number }) => {
+    const response = await apiClient.get<PostsResponse>(`/posts/search`, {
+      params: { q: query, limit: params.limit, skip: params.skip },
+    })
     return response.data
   },
 
-  getPostsByTag: async (tag: string) => {
+  getPostsByTag: async (tag: string, params: { limit: number; skip: number }) => {
     const [postsResponse, usersResponse] = await Promise.all([
-      apiClient.get<PostsResponse>(`/posts/tag/${tag}`),
+      apiClient.get<PostsResponse>(`/posts/tag/${tag}`, { params }),
       apiClient.get<UsersResponse>('/users', { params: { limit: 0, select: 'username,image' } }),
     ])
 

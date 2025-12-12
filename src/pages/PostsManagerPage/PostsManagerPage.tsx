@@ -29,8 +29,8 @@ export const PostsManagerPage = () => {
   const [selectedUserId, setSelectedUserId] = useState<number | undefined>()
 
   const { data: postsData, isLoading } = usePosts({ limit, skip })
-  const { data: searchData } = useSearchPosts(searchQuery)
-  const { data: tagData } = usePostsByTag(selectedTag)
+  const { data: searchData } = useSearchPosts(searchQuery, { limit, skip })
+  const { data: tagData } = usePostsByTag(selectedTag, { limit, skip })
   const { data: userData } = useUser(selectedUserId, showUserModal)
   const { handleDelete } = usePostDelete()
 
