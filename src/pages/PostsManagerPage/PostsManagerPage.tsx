@@ -1,0 +1,136 @@
+import { useState, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { Card, CardHeader, CardTitle, CardContent, Button } from '@/shared/ui'
+import { Plus } from 'lucide-react'
+import { usePostsStore } from '@/shared/model/store'
+import { usePosts, useSearchPosts, usePostsByTag } from '@/entities/post/api/queries'
+import { useUser } from '@/entities/user/api/queries'
+import { Post } from '@/entities/post/model/types'
+import { PostsTable } from '@/widgets/posts-table/ui/PostsTable'
+import { PostDetailDialog } from '@/widgets/post-detail/ui/PostDetailDialog'
+import { PostsFilters } from '@/widgets/posts-filters/ui/PostsFilters'
+import { PostsPagination } from '@/widgets/posts-pagination/ui/PostsPagination'
+import { PostSearchBar } from '@/features/post-search/ui/PostSearchBar'
+import { PostCreateDialog } from '@/features/post-create/ui/PostCreateDialog'
+import { PostUpdateDialog } from '@/features/post-update/ui/PostUpdateDialog'
+import { usePostDelete } from '@/features/post-delete'
+import { UserModal } from '@/entities/user/ui/UserModal'
+
+export const PostsManagerPage = () => {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { searchQuery, selectedTag, skip, limit, setSearchQuery, setSelectedTag, setSkip, setLimit } = usePostsStore()
+
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showPostDetail, setShowPostDetail] = useState(false)
+  const [showUserModal, setShowUserModal] = useState(false)
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+  const [selectedUserId, setSelectedUserId] = useState<number | undefined>()
+
+  const { data: postsData, isLoading } = usePosts({ limit, skip })
+  const { data: searchData } = useSearchPosts(searchQuery)
+  const { data: tagData } = usePostsByTag(selectedTag)
+  const { data: userData } = useUser(selectedUserId, showUserModal)
+  const { handleDelete } = usePostDelete()
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    setSkip(parseInt(params.get('skip') || '0'))
+    setLimit(parseInt(params.get('limit') || '10'))
+    setSearchQuery(params.get('search') || '')
+    setSelectedTag(params.get('tag') || '')
+  }, [location.search])
+
+  useEffect(() => {
+    updateURL()
+  }, [skip, limit, selectedTag])
+
+  const updateURL = () => {
+    const params = new URLSearchParams()
+    if (skip) params.set('skip', skip.toString())
+    if (limit) params.set('limit', limit.toString())
+    if (searchQuery) params.set('search', searchQuery)
+    if (selectedTag) params.set('tag', selectedTag)
+    navigate(`?${params.toString()}`)
+  }
+
+  const handleSearch = () => {
+    updateURL()
+  }
+
+  const handleTagChange = () => {
+    updateURL()
+  }
+
+  const handlePostDetail = (post: Post) => {
+    setSelectedPost(post)
+    setShowPostDetail(true)
+  }
+
+  const handlePostEdit = (post: Post) => {
+    setSelectedPost(post)
+    setShowEditDialog(true)
+  }
+
+  const handlePostDelete = (post: Post) => {
+    handleDelete(post.id, post.title)
+  }
+
+  const handleTagClick = (tag: string) => {
+    setSelectedTag(tag)
+    updateURL()
+  }
+
+  const handleAuthorClick = (author: any) => {
+    setSelectedUserId(author.id)
+    setShowUserModal(true)
+  }
+
+  const displayData = searchQuery ? searchData : selectedTag && selectedTag !== 'all' ? tagData : postsData
+  const posts = displayData?.posts || []
+  const total = displayData?.total || 0
+
+  return (
+    <Card className="w-full max-w-6xl mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span>게시물 관리자</span>
+          <Button onClick={() => setShowAddDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            게시물 추가
+          </Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-4">
+            <PostSearchBar onSearch={handleSearch} />
+            <PostsFilters onTagChange={handleTagChange} />
+          </div>
+
+          {isLoading ? (
+            <div className="flex justify-center p-4">로딩 중...</div>
+          ) : (
+            <PostsTable
+              posts={posts}
+              searchQuery={searchQuery}
+              onPostDetail={handlePostDetail}
+              onPostEdit={handlePostEdit}
+              onPostDelete={handlePostDelete}
+              onTagClick={handleTagClick}
+              onAuthorClick={handleAuthorClick}
+            />
+          )}
+
+          <PostsPagination total={total} />
+        </div>
+      </CardContent>
+
+      <PostCreateDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      <PostUpdateDialog post={selectedPost} open={showEditDialog} onOpenChange={setShowEditDialog} />
+      <PostDetailDialog post={selectedPost} searchQuery={searchQuery} open={showPostDetail} onOpenChange={setShowPostDetail} />
+      <UserModal user={userData || null} open={showUserModal} onOpenChange={setShowUserModal} />
+    </Card>
+  )
+}
