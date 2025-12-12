@@ -42,25 +42,39 @@ export const PostsManagerPage = () => {
     setSelectedTag(params.get('tag') || '')
   }, [location.search])
 
-  useEffect(() => {
-    updateURL()
-  }, [skip, limit, selectedTag])
-
-  const updateURL = () => {
+  const updateURL = (updates?: { skip?: number; limit?: number; search?: string; tag?: string }) => {
     const params = new URLSearchParams()
-    if (skip) params.set('skip', skip.toString())
-    if (limit) params.set('limit', limit.toString())
-    if (searchQuery) params.set('search', searchQuery)
-    if (selectedTag) params.set('tag', selectedTag)
-    navigate(`?${params.toString()}`)
+    const newSkip = updates?.skip !== undefined ? updates.skip : skip
+    const newLimit = updates?.limit !== undefined ? updates.limit : limit
+    const newSearch = updates?.search !== undefined ? updates.search : searchQuery
+    const newTag = updates?.tag !== undefined ? updates.tag : selectedTag
+
+    if (newSkip) params.set('skip', newSkip.toString())
+    if (newLimit !== 10) params.set('limit', newLimit.toString())
+    if (newSearch) params.set('search', newSearch)
+    if (newTag && newTag !== 'all') params.set('tag', newTag)
+    navigate(`?${params.toString()}`, { replace: true })
   }
 
   const handleSearch = () => {
-    updateURL()
+    setSkip(0)
+    updateURL({ skip: 0 })
   }
 
   const handleTagChange = () => {
-    updateURL()
+    setSkip(0)
+    updateURL({ skip: 0 })
+  }
+
+  const handleSkipChange = (newSkip: number) => {
+    setSkip(newSkip)
+    updateURL({ skip: newSkip })
+  }
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit)
+    setSkip(0)
+    updateURL({ limit: newLimit, skip: 0 })
   }
 
   const handlePostDetail = (post: Post) => {
@@ -79,7 +93,8 @@ export const PostsManagerPage = () => {
 
   const handleTagClick = (tag: string) => {
     setSelectedTag(tag)
-    updateURL()
+    setSkip(0)
+    updateURL({ tag, skip: 0 })
   }
 
   const handleAuthorClick = (author: any) => {
@@ -123,7 +138,13 @@ export const PostsManagerPage = () => {
             />
           )}
 
-          <PostsPagination total={total} />
+          <PostsPagination
+            total={total}
+            skip={skip}
+            limit={limit}
+            onSkipChange={handleSkipChange}
+            onLimitChange={handleLimitChange}
+          />
         </div>
       </CardContent>
 

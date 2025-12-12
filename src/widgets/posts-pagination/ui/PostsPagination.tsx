@@ -1,21 +1,27 @@
 import { Button, Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/shared/ui'
-import { usePostsStore } from '@/shared/model/store'
 
 interface PostsPaginationProps {
   total: number
+  skip: number
+  limit: number
+  onSkipChange: (skip: number) => void
+  onLimitChange: (limit: number) => void
 }
 
-export const PostsPagination = ({ total }: PostsPaginationProps) => {
-  const { skip, limit, setSkip, setLimit } = usePostsStore()
+export const PostsPagination = ({ total, skip, limit, onSkipChange, onLimitChange }: PostsPaginationProps) => {
+  const handlePrevious = () => {
+    onSkipChange(Math.max(0, skip - limit))
+  }
+
+  const handleNext = () => {
+    onSkipChange(skip + limit)
+  }
 
   return (
     <div className="flex justify-between items-center">
       <div className="flex items-center gap-2">
         <span>표시</span>
-        <Select
-          value={limit.toString()}
-          onValueChange={(value) => setLimit(Number(value))}
-        >
+        <Select value={limit.toString()} onValueChange={(value) => onLimitChange(Number(value))}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="10" />
           </SelectTrigger>
@@ -28,10 +34,10 @@ export const PostsPagination = ({ total }: PostsPaginationProps) => {
         <span>항목</span>
       </div>
       <div className="flex gap-2">
-        <Button disabled={skip === 0} onClick={() => setSkip(Math.max(0, skip - limit))}>
+        <Button disabled={skip === 0} onClick={handlePrevious}>
           이전
         </Button>
-        <Button disabled={skip + limit >= total} onClick={() => setSkip(skip + limit)}>
+        <Button disabled={skip + limit >= total} onClick={handleNext}>
           다음
         </Button>
       </div>
