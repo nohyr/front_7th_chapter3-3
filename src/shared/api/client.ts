@@ -1,14 +1,9 @@
 import axios from 'axios'
 
-const getBaseURL = () => {
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return 'https://dummyjson.com'
-  }
-  return '/api'
-}
+declare const __API_BASE_URL__: string
 
 export const apiClient = axios.create({
-  baseURL: getBaseURL(),
+  baseURL: __API_BASE_URL__,
   headers: {
     'Content-Type': 'application/json',
   },
